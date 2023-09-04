@@ -1,5 +1,19 @@
 function [F_faces,dt] = Solver_vec(W,t,T_end)
+    % Solves the Riemann Problem with Riemann (HLL ou Rusanlov ?). It computes all the flux
+    % corresponding to the solution W at time t
+    %
+    % Inputs:
+    % -> W_n: solution at time t
+    % -> W_border: _ ?
+    % -> t: _ ?
+    % -> T_end: _ ?
+    % -> Riemann: the Riemann solver, for now available : HLL, HLLC, Rusanov
+    %
+    % Outputs:
+    % -> F_n: flux at time t
+    % -> dt: optimal time step for time integration
 
+    % global variables
     global dx
     global Nx
     global g
@@ -20,7 +34,7 @@ function [F_faces,dt] = Solver_vec(W,t,T_end)
     % compute flux on faces
     F_faces = (F_(:,1:Nx+1) + F_(:,2:Nx+2) - lambda_faces.*(W_(:,2:Nx+2) - W_(:,1:Nx+1)))/2;
 
-    % compute dt
+    % compute optimal dt
     dt = min([dt, dx./(2*lambda_faces)]);
     
 end
