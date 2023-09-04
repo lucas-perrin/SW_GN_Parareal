@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%   Work with M. Parisot : Parareal, SW, GN   %%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%   Work with M. Parisot : Parareal, SW, GN   %%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % This is version 2 : trying working parareal with good energy
@@ -20,6 +20,14 @@ global Nx
 global L
 global x
 global epsilon
+
+% for the plots
+
+Fontsize = 18;
+Fontsize_label = 18;
+Fontsize_axes = 18;
+Linesize = 2;
+Marksize = 9;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% Computations
@@ -74,7 +82,7 @@ W0 = W_0(1,:).*[ones(1,Nx);U_0];
 fprintf('========================================\n')
 fprintf('computing straightforward models... \n \n')
 
-N = 1;
+N = 20;
 Tj_list = T_end.*[1/N:1/N:1];
 
 % Run Shallow-Water model
@@ -93,7 +101,7 @@ fprintf(['-> final   total SW entropy : ',num2str(sum(entropy(SW_sol{end}))),'\n
 tic
 [GN_sol] = Green_Nagdhi(W0,0,Tj_list);
 GN_time = toc;
-
+fprintf('\n')
 fprintf(['Elapsed time Green-Nagdhi : ',num2str(GN_time),'\n'])
 
 fprintf(['-> initial total GN entropy : ',num2str(sum(entropy(GN_sol{1}))),'\n'])
@@ -149,15 +157,17 @@ Ent_2 = Ent_1;
 
 figure(7)
 for j = 1:N+1
-for k = 1:N+1
-   Ent_1(k,j) = sum(entropy(U_para{k,j}));
-end
-subplot(lines_plt,colum_plt,j)
-semilogy(1:N+1,Ent_1(:,j),'-o',...
-    1:N+1,ones(1,N+1).*sum(entropy(W0)),'-r')
-title(['entropy at time ', num2str(j)],'interpreter','latex')
-xlabel('Parareal iteration nb','interpreter','latex')
-grid on
+    for k = 1:N+1
+    Ent_1(k,j) = sum(entropy(U_para{k,j}));
+    end
+    subplot(lines_plt,colum_plt,j)
+    semilogy(1:N+1,Ent_1(:,j),'-o',...
+        1:N+1,ones(1,N+1).*sum(entropy(W0)),'-r',...
+        'LineWidth',Linesize,'MarkerSize',Marksize)
+    set(gca,'FontSize',Fontsize_axes)
+    xlabel('Parareal iteration nb','interpreter','latex','Fontsize',Fontsize_label)
+    title(['entropy at $t = T_', num2str(j),'$'],'interpreter','latex','Fontsize',Fontsize)
+    grid on
 end
 
 % ===== entropy at each steap
@@ -169,12 +179,14 @@ for j = 1:N+1
     end
     subplot(lines_plt,colum_plt,j)
     semilogy(1:N+1,Ent_2(j,:),'-o',...
-        1:N+1,ones(1,N+1).*sum(entropy(W0)),'-r')
+        1:N+1,ones(1,N+1).*sum(entropy(W0)),'-r',...
+        'LineWidth',Linesize,'MarkerSize',Marksize)
+    set(gca,'FontSize',Fontsize_axes)
     xlim([0.14,inf])
-    title(['entropy at step ', num2str(j)],'interpreter','latex')
-    xlabel('Parareal iteration nb','interpreter','latex')
+    xlabel('Parareal iteration nb','interpreter','latex','Fontsize',Fontsize_label)
     grid on
 end
+sgtitle(['entropy at step ', num2str(j)],'interpreter','latex','Fontsize',Fontsize)
 
 % ===== error at each time
 
@@ -206,27 +218,45 @@ end
 
 figure(9)
 for j = 1:N+1
-subplot(lines_plt,colum_plt,j)
-semilogy(1:N+1,error_L2_h(:,j),'-o',...
-    1:N+1,ones(1,N+1).*baseline_err_L2_h(j),'-r',...
-    1:N+1,SWerror_L2_h(:,j),'-x')
-title('error on $h$','interpreter','latex')
-xlabel('Parareal iteration #','interpreter','latex')
-legend('$\|h_{para} - h_{GN}\|_2$',...
-    '$\|h_{SW} - h_{GN}\|_2$',...
-    '$\|h_{para} - h_{SW}\|_2$',....
-    'interpreter','latex','Location','southwest')
-grid on
+    subplot(lines_plt,colum_plt,j)
+    semilogy(1:N+1,error_L2_h(:,j),'-o',...
+        1:N+1,ones(1,N+1).*baseline_err_L2_h(j),'-r',...
+        1:N+1,SWerror_L2_h(:,j),'-x',...
+        'LineWidth',Linesize,'MarkerSize',Marksize)
+    set(gca,'FontSize',Fontsize_axes)
+    xlabel('Parareal iteration nb','interpreter','latex','Fontsize',Fontsize_label)
+    legend('$\|h_{para} - h_{GN}\|_2$',...
+        '$\|h_{SW} - h_{GN}\|_2$',...
+        '$\|h_{para} - h_{SW}\|_2$',...
+        'Fontsize',Fontsize,...
+        'interpreter','latex','Location','southwest')
+    title(['at $t = T_',num2str(j),'$'],'interpreter','latex','Fontsize',Fontsize) 
+    grid on
 end
+sgtitle('error on $h$','interpreter','latex','Fontsize',Fontsize) 
 
 figure(10)
 for j = 1:N+1
-subplot(floor(sqrt(N+1))+1,floor(sqrt(N+1))+1,j)
-semilogy(1:N+1,error_entropy(:,j),'-o')
-title('error entropy','interpreter','latex')
-xlabel('Parareal iteration nb','interpreter','latex')
-grid on
+    subplot(floor(sqrt(N+1))+1,floor(sqrt(N+1))+1,j)
+    semilogy(1:N+1,error_entropy(:,j),'-o',...
+        'LineWidth',Linesize,'MarkerSize',Marksize)
+    set(gca,'FontSize',Fontsize_axes)
+    % title('error entropy : $\mathcal{E}$(GN) - $\mathcal{E}$(Parareal)','interpreter','latex')
+    xlabel('Parareal iteration nb','interpreter','latex','Fontsize',Fontsize_label)
+    title(['at $t = T_',num2str(j),'$'],'interpreter','latex','Fontsize',Fontsize) 
+    grid on
 end
+sgtitle('error entropy : $\|\mathcal{E}$(GN) - $\mathcal{E}$(Parareal)$\|_1$','interpreter','latex','Fontsize',Fontsize)
+
+figure(11)
+for k = 1:N+1
+    subplot(floor(sqrt(N+1))+1,floor(sqrt(N+1))+1,k)
+    plot(x,GN_sol{j}(1,:),x,U_para{k,end}(1,:),...
+        'LineWidth',Linesize,'MarkerSize',Marksize)
+    set(gca,'FontSize',Fontsize_axes)
+    grid on
+end
+sgtitle('error entropy : $\|\mathcal{E}$(GN) - $\mathcal{E}$(Parareal)$\|_1$','interpreter','latex','Fontsize',Fontsize)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% functions
