@@ -1,0 +1,217 @@
+\documentclass[review,onefignum,onetabnum]{siamart220329}
+
+\usepackage[many]{tcolorbox}
+\newtcolorbox{boxA}{
+    fontupper = \bf,
+    boxrule = 1.5pt,
+    colframe = black, % frame color
+    rounded corners,
+    arc = 5pt,   % corners roundness
+}
+
+\title{Work with M.Parisot}
+
+\newcommand{\G}{\mathcal{G}}
+\newcommand{\F}{\mathcal{F}}
+
+\begin{document}
+
+\maketitle
+
+\noindent On a l'algorithme classique de Parareal, avec un solver grossier $\G$ et un solveur fin $\F$, avec une initialisation séquentielle :
+\begin{equation}
+\begin{cases}
+    U^{0}_{j+1} = \G(T_{j},T_{j+1},U^{0}_{j}), \quad j = 0,\ldots,N-1\\
+    \quad U^{0}_{0} = u_0,
+\end{cases}
+\end{equation}
+ainsi que l'itération :
+\begin{equation}
+    U^{k}_{j+1} = \G(T_{j},T_{j+1},U^{k}_{j}) + \mathcal{F}(T_{j},T_{j+1},U^{k-1}_{j}) - \G(T_{j},T_{j+1},U^{k-1}_{j}),
+\end{equation}
+avec $j = 0,...,N-1$, $k = 1,...,N$.\\
+La convergence de l'algorithme vers le résultat fin $\F(T_0,T_N,U^0_0)$ repose sur le fait que à l'itération $k$, $U^k_k = \F(T_{k-1},T_{k},U^{k-1}_{k-1})$. Pour que ceci soit vérifié, il suffit que $\G(T_{k-1},T_{k},U^{k}_{k-1}) = \G(T_{k-1},T_{k},U^{k-1}_{k-1})$. Autrement dit, il faut que $U^{k}_{k-1} = U^{k-1}_{k-1}$ (ce qui sera vérifié par récurrence), et que le grossier soit exactement le même sur ces deux itérations, i.e. : même schéma, même nombre de pas de temps, même temps de départ, etc...
+\begin{boxA}
+\textbf{Problème} : Dans notre cas on ne veut pas "couper" les pas de temps, surtout ceux du fin, et donc imposer les temps d'arrêt.   
+\end{boxA}
+\section{première idée qui dégrade le grossier mais pas le fin}
+On propose alors \textbf{les modifications suivantes} :
+\begin{itemize}
+    \item Lors de l'initialisation, on effectue une réalisation entière du grossier $\G$, et on définit ensuite $T_j$, $j = 0,..,N$, de manière à avoir autant de pas de temps entre chacun des $T_j$. (déjà proposé par Gander pour les schémas à pas de temps adaptatifs.)
+    \item Les temps de passage $T_j$ son maintenant fixés pour le reste de la procédure \textbf{pour le grossier}  $\G$ \textbf{uniquement}.
+    \item Les réalisations du fin $\F$ à l'itération $k$ se feront entre $T_j + \Delta^{k-1}_{j}$ (arrivée du fin de l'itération précédente à l'intervalle précédent) et $T_{j+1} + \Delta^{k}_{j+1}$ (on laisse le fin s'arrêter sans "casser" un pas de temps) avec la convention : $\Delta^{-1}_{j} = T_j$.
+\end{itemize}
+Le but étant, d'obtenir à la fin : $U^{N}_{N} = \F(T_0,T_{N}+\Delta^{N}_{N},u_0$
+En pratique cela donne, pour $N = 2$ :
+\begin{equation*}
+\text{Initialisation :}
+\begin{cases}
+U^0_0 = u_0 \\
+U^0_1 = \G(T_{0},T_{1},U^{0}_{0}) \\
+U^0_2 = \G(T_{1},T_{2},U^{0}_{1})
+\end{cases}
+\end{equation*}
+\begin{equation*}
+\text{Itération 1 :}
+\begin{cases}
+U^1_0 = U^0_0 \\
+U^1_1 = \G(T_{0},T_{1},U^{1}_{0}) - \G(T_{0},T_{1},U^{0}_{0}) + \F(T_{0},T_{1} + \Delta^1_1,U^{0}_{0}) \\
+U^1_2 = \G(T_{1},T_{2},U^{1}_{1}) - \G(T_{1},T_{2},U^{0}_{1}) + \F(T_{1},T_{2} + \Delta^1_2,U^{0}_{1}) 
+\end{cases}
+\end{equation*}
+\begin{equation*}
+\text{Itération 2 :}
+\begin{cases}
+U^2_0 = U^1_0 \\
+U^2_1 = \G(T_{0},T_{1},U^{2}_{0}) - \G(T_{0},T_{1},U^{1}_{0}) + \F(T_{0},T_{1} + \Delta^2_1,U^{1}_{0}) \\
+U^2_2 = \G(T_{1},T_{2},U^{2}_{1}) - \G(T_{1},T_{2},U^{1}_{1}) + \F(T_{1} + \Delta^1_1 ,T_{2} + \Delta^2_2,U^{1}_{1}) 
+\end{cases}
+\end{equation*}
+On prouve par récurrence qu'on a bien $U^{k}_{k} = \F(T_0,T_{k} + \Delta^k_k,u_0)$ :
+\begin{equation}
+U^1_1 = \G(T_{0},T_{1},U^{1}_{0}) - \G(T_{0},T_{1},U^{0}_{0}) + \F(T_{0},T_{1} + \Delta^1_1,U^{0}_{0}),
+\end{equation}
+or $U^1_0 = U^0_0 = u_0$ donc $\G(T_{0},T_{1},U^{1}_{0}) = \G(T_{0},T_{1},U^{0}_{0})$ et $U^1_1 = \F(T_{0},T_{1} + \Delta^1_1,U^{0}_{0} = u_0)$. Pareil pour :
+\begin{equation}
+U^2_2 = \G(T_{1},T_{2},U^{2}_{1}) - \G(T_{1},T_{2},U^{1}_{1}) + \F(T_{1} + \Delta^1_1 ,T_{2} + \Delta^2_2,U^{1}_{1}).
+\end{equation}
+On a $U^2_1 = U^1_1$ donc $\G(T_{1},T_{2},U^{2}_{1}) = \G(T_{1},T_{2},U^{1}_{1})$ et 
+\begin{equation}
+U^2_2 = \F(T_{1} + \Delta^1_1 ,T_{2} + \Delta^2_2,U^{1}_{1}) = \F(T_{1} + \Delta^1_1 ,T_{2} + \Delta^2_2,\F(T_{0},T_{1} + \Delta^1_1,u_0)),
+\end{equation}
+donc $U^2_2 = \F(T_{0},T_{2} + \Delta^2_2,u_0)$.\\
+Avec le même raisonnement, si l'on suppose $U^k_k = \F(T_{0},T_{k} + \Delta^k_k,u_0)$, alors :
+\begin{equation}
+U^{k+1}_{k+1} = \G(T_{k},T_{k+1},U^{k+1}_{k}) - \G(T_{k},T_{k+1},U^{k}_{k}) + \F(T_{k} + \Delta^k_k ,T_{k+1} + \Delta{k+1}_{k+1},U^{k}_{k}).
+\end{equation}
+Comme $U^{k+1}_k = U^k_k$ (a vérifier ?), on a alors bien :
+\begin{equation}
+U^{k+1}_{k+1} = \F(T_{k} + \Delta^k_k ,T_{k+1} + \Delta^{k+1}_{k+1},U^{1}_{1}) = \F(T_{k} + \Delta^k_k ,T_{k+1} + \Delta^{k+1}_{k+1},\F(T_{0},T_{k} + \Delta^k_k,u_0)),
+\end{equation}
+et donc : $U^{k+1}_{k+1} = \F(T_{0},T_{k+1} + \Delta^{k+1}_{k+1},u_0)$.
+%==========
+%==========
+%==========
+\section{Seconde idée qui ne dégrade ni le grossier ni le fin}
+\begin{equation*}
+\text{Initialisation :}
+\begin{cases}
+U^0_0 = u_0 \\
+U^0_1 = \G(T_{0},(n_{\Delta t})_1^0,U^{0}_{0}) \\
+U^0_2 = \G(t((n_{\Delta t})^0_1),(n_{\Delta t})^0_2,U^{0}_{1})
+\end{cases}
+\end{equation*}
+\begin{equation*}
+\text{Itération 1 :}
+\begin{cases}
+U^1_0 = U^0_0 \\
+U^1_1 = \G(T_{0},(n_{\Delta t})^1_1,U^{1}_{0}) - \G(T_{0},(n_{\Delta t})^0_1,U^{0}_{0}) + \F(T_{0},(n_{\delta t})^1_1,U^{0}_{0}) \\
+U^1_2 = \G(t((n_{\Delta t})^1_1),(n_{\Delta t})^1_2,U^{1}_{0}) - \G(t((n_{\Delta t})^0_1),(n_{\Delta t})^0_2,U^{0}_{1}) + \F(t((n_{\delta t})^0_1),(n_{\delta t})^1_2,U^{0}_{1}) \\
+\end{cases}
+\end{equation*}
+\begin{equation*}
+\text{Itération 2 :}
+\begin{cases}
+U^2_0 = U^1_0 \\
+U^2_1 = \G(T_{0},T_{1},U^{2}_{0}) - \G(T_{0},T_{1},U^{1}_{0}) + \mathcal{F}(T_{0},T_{1} + \Delta^2_1,U^{1}_{0}) \\
+U^2_2 = \G(T_{1},T_{2},U^{2}_{1}) - \G(T_{1},T_{2},U^{1}_{1}) + \mathcal{F}(T_{1} + \Delta^1_1 ,T_{2} + \Delta^2_2,U^{1}_{1}) 
+\end{cases}
+\end{equation*}
+On prouve par récurrence qu'on a bien $U^{n}_{n} = \F(T_0,(n_{\delta t})^n_n,u_0)$ :
+\begin{equation}
+U^1_1 = \G(T_{0},(n_{\Delta t})^1_1,U^{1}_{0}) - \G(T_{0},(n_{\Delta t})^0_1,U^{0}_{0}) + \F(T_{0},(n_{\delta t})^1_1,U^{0}_{0})
+\end{equation}
+or $\G(T_{0},(n_{\Delta t})^1_1,U^{1}_{0}) = \G(T_{0},(n_{\Delta t})^0_1,U^{0}_{0})$ car ils ont tous les deux même temps de départ et même donnée initiale.
+\newpage
+Questions :
+\begin{itemize}
+\item Quelle erreur regarder ?
+\item erreur relative  à l'échelle ?
+\item Pertinent de comparer $\|s_{Para} - s_{GN}\|$ et $\|s_{Para} - s_{SW}\|$ ?
+\item Modèle plus complexe ? 2D ? avec batimétrie ? îlot ? maillage à trous ?
+\item Vu qu'on veut un parareal "non-intrusif", il me "suffit" de deux fonctions @ShallowWater(u0,T0,Tf) et @GreenNagdhi(u0,T0,Tf) (si possible avec option ou non de tronquer le dernier pas de temps).
+\end{itemize}
+\begin{equation}
+\begin{pmatrix}
+h\\hu
+\end{pmatrix}^{k}_{j} =
+\G\left(
+\begin{pmatrix}
+h\\hu
+\end{pmatrix}^{k}_{j-1}\right) - 
+\G\left(
+\begin{pmatrix}
+h\\hu
+\end{pmatrix}^{k-1}_{j-1}\right) +
+\F\left(\Pi_{GN}\left[
+\begin{pmatrix}
+h\\hu \\ 0 \\ 0
+\end{pmatrix}^{k-1}_{j-1}\right]\right)
+\end{equation}
+ou bien :
+\begin{equation}
+\begin{pmatrix}
+h\\hu \\ hw \\ h\sigma
+\end{pmatrix}^{k}_{j} =
+\Pi_{GN}\left[\G\left(
+\begin{pmatrix}
+h\\hu \\ 0 \\ 0
+\end{pmatrix}^{k}_{j-1}\right)\right] - 
+\Pi_{GN}\left[\G\left(
+\begin{pmatrix}
+h\\hu \\ 0 \\ 0
+\end{pmatrix}^{k-1}_{j-1}\right)\right] +
+\F\left(
+\begin{pmatrix}
+h\\hu \\ hw \\ h\sigma
+\end{pmatrix}^{k-1}_{j-1}\right)
+\end{equation}
+\begin{equation}
+\Pi_{GN} : \begin{pmatrix}
+h \\ u \\ w \\ \sigma
+\end{pmatrix} = 
+\begin{pmatrix}
+h \\ U
+\end{pmatrix}
+\mapsto 
+\begin{pmatrix}
+h \\ \Tilde{U}
+\end{pmatrix}, \quad \text{où } \Tilde{U} =
+\begin{pmatrix}
+\Tilde{u} \\ \Tilde{w} \\ \Tilde{\sigma}
+\end{pmatrix}
+= \texttt{getws}
+\begin{pmatrix}
+h \\ A^{-1} \beta
+\end{pmatrix}
+\end{equation}
+$A^{-1} \beta$ la solution du système linéaire $Ax = \beta$ (avec les defs de $A$ et $\beta$ que tu m'avais donné).\\
+Selon moi pour projeter, il faut avant diviser $hu, hw, h\sigma$ par $h$, puis projeter, puis re-multiplier par $h$.
+
+\section{06/09/23}
+
+Ce qui a été proposé par Martin avant l'été:
+
+\begin{equation}
+    \begin{pmatrix}
+        h \\ hu \\ hw \\ h\sigma
+    \end{pmatrix}^{k}_{j} =
+    G\left[
+        \begin{pmatrix}
+            h \\ hu \\ hw \\ h\sigma
+        \end{pmatrix}^{k}_{j-1}
+    \right]
+    - G\left[
+        \begin{pmatrix}
+            h \\ hu \\ hw \\ h\sigma
+        \end{pmatrix}^{k-1}_{j-1}
+    \right]
+    + F\left[ h^{k-1}_{j-1} \cdot \Pi_{h^{k-1}_{j-1}} \left[
+        \begin{pmatrix}
+            u \\ w \\ \sigma
+        \end{pmatrix}^{k}_{j-1}
+        \right]
+    \right]
+\end{equation}
+
+\end{document}
