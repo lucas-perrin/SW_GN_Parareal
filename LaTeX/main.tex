@@ -41,7 +41,7 @@ On propose alors \textbf{les modifications suivantes} :
     \item Les temps de passage $T_j$ son maintenant fixés pour le reste de la procédure \textbf{pour le grossier}  $\G$ \textbf{uniquement}.
     \item Les réalisations du fin $\F$ à l'itération $k$ se feront entre $T_j + \Delta^{k-1}_{j}$ (arrivée du fin de l'itération précédente à l'intervalle précédent) et $T_{j+1} + \Delta^{k}_{j+1}$ (on laisse le fin s'arrêter sans "casser" un pas de temps) avec la convention : $\Delta^{-1}_{j} = T_j$.
 \end{itemize}
-Le but étant, d'obtenir à la fin : $U^{N}_{N} = \F(T_0,T_{N}+\Delta^{N}_{N},u_0$
+Le but étant, d'obtenir à la fin : $U^{N}_{N} = \F(T_0,T_{N}+\Delta^{N}_{N},u_0)$
 En pratique cela donne, pour $N = 2$ :
 \begin{equation*}
 \text{Initialisation :}
@@ -209,7 +209,7 @@ Ce qui a été proposé par Martin avant l'été:
     + F\left[ h^{k-1}_{j-1} \cdot \Pi_{h^{k-1}_{j-1}} \left[
         \begin{pmatrix}
             u \\ w \\ \sigma
-        \end{pmatrix}^{k}_{j-1}
+        \end{pmatrix}^{k-1}_{j-1}
         \right]
     \right]
 \end{equation}
